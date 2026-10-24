@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your Daily Surprise</title>
+<meta name="description" content="Tap to see today's free app, game or deal picked for your phone and country.">
+<style>
+:root {
+  --bg: #fff4e3;
+  --ink: #2a1b3d;
+  --muted: #6d5b80;
+  --box: #ff5d73;
+  --box-dark: #d93a52;
+  --box-light: #ff8497;
+  --ribbon: #ffd23f;
+  --ribbon-dark: #e8b616;
+  --btn: #2a1b3d;
+  --btn-text: #fff4e3;
+  --glow: rgba(255, 93, 115, 0.35);
+  --plum: #2a1b3d;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-io: cubic-bezier(0.65, 0, 0.2, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --px: 50%;
+  --py: 50%;
+  --pd: 300vmax;
+  box-sizing: border-box;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1d1230;
+    --ink: #fff1dc;
+    --muted: #b9a8cf;
+    --btn: #ffd23f;
+    --btn-text: #2a1b3d;
+    --glow: rgba(255, 210, 63, 0.22);
+  }
+}
+*, *::before, *::after { box-sizing: inherit; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(120% 70% at 50% 0%, var(--glow), transparent 60%),
+    var(--bg);
+  color: var(--ink);
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  font-size: 18px;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(24px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+main {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  text-align: center;
+  z-index: 5;
+}
+h1 {
+  font-size: clamp(2rem, 9vw, 2.9rem);
+  font-weight: 900;
+  line-height: 1.05;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+  animation: rise 0.5s var(--ease-out) both;
+}
+.sub {
+  margin: 0 auto 30px;
+  color: var(--muted);
+  max-width: 30ch;
+  animation: rise 0.5s 0.05s var(--ease-out) both;
+}
+.fade {
+  transition: opacity 0.25s ease, transform 0.35s var(--ease-io);
+}
+.busy .fade {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  pointer-events: none;
+}
+.stage {
+  position: relative;
+  width: 176px;
+  height: 176px;
+  margin: 0 auto 38px;
+  animation: rise 0.6s 0.1s var(--ease-out) both, bob 2.4s 0.7s ease-in-out infinite;
+  transition: transform 0.5s var(--ease-io), opacity 0.3s ease 0.1s;
+  will-change: transform;
+}
+.busy .stage { animation: none; }
+.warp .stage { transform: scale(1.6); opacity: 0; }
+.glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 300px;
+  height: 300px;
+  margin: -150px 0 0 -150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--glow), transparent 68%);
+  animation: pulse 2.8s ease-in-out infinite;
+  transition: transform 0.5s var(--ease-out);
+  will-change: transform, opacity;
+}
+.busy .glow { animation: none; opacity: 0.9; }
+.open .glow { transform: scale(2.1); }
+.floor {
+  position: absolute;
+  left: 50%;
+  bottom: -26px;
+  width: 140px;
+  height: 18px;
+  margin-left: -70px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(42, 27, 61, 0.28), transparent);
+  animation: floor 2.4s 0.7s ease-in-out infinite;
+}
+.busy .floor { animation: none; }
+.burst {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: 420px;
+  height: 420px;
+  margin: -210px 0 0 -210px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 210, 63, 0.75) 0deg 7deg, transparent 7deg 18deg);
+  -webkit-mask-image: radial-gradient(circle, #000 12%, transparent 66%);
+  mask-image: radial-gradient(circle, #000 12%, transparent 66%);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.open .burst { animation: burst 0.7s var(--ease-out) forwards; }
+.spark {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: var(--ribbon);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  opacity: 0;
+  animation: twinkle 1.8s ease-in-out infinite;
+}
+.spark.s1 { left: -26px; top: 22px; }
+.spark.s2 { right: -30px; top: 6px; width: 20px; height: 20px; animation-delay: 0.9s; }
+.spark.s3 { right: -12px; bottom: 30px; width: 11px; height: 11px; animation-delay: 1.7s; }
+.spark.s4 { left: -10px; bottom: 10px; width: 16px; height: 16px; animation-delay: 0.4s; }
+.busy .spark { animation: none; opacity: 0; }
+.gift {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transform-origin: 50% 90%;
+  outline: none;
+}
+.gift:not(:disabled) { animation: tease 2.2s 0.6s ease-in-out infinite; }
+.gift:not(:disabled) .lid { animation: lidpeek 2.2s 0.6s ease-in-out infinite; }
+.ripple {
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  width: 176px;
+  height: 176px;
+  margin: -88px 0 0 -88px;
+  border: 3px solid var(--ribbon);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  animation: ripple 1.6s 0.5s ease-out infinite;
+  will-change: transform, opacity;
+}
+.ripple.r2 { animation-delay: 1.3s; }
+.busy .ripple { animation: none; opacity: 0; }
+.tapdot {
+  position: absolute;
+  left: 50%;
+  top: 64%;
+  width: 38px;
+  height: 38px;
+  margin: -19px 0 0 -19px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid var(--ribbon);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 6;
+  animation: tapdot 2.2s 0.6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+.busy .tapdot { animation: none; opacity: 0; }
+@media (hover: hover) {
+  .gift:hover:not(:disabled) { animation: nudge 0.6s ease; }
+}
+.gift.shake { animation: shake 0.28s ease-in-out; }
+.gift:focus-visible .body {
+  outline: 3px solid var(--ribbon);
+  outline-offset: 5px;
+}
+.lid {
+  position: absolute;
+  left: -9px;
+  right: -9px;
+  top: 14px;
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--box-light), var(--box-dark));
+  z-index: 3;
+  transform-origin: 12% 100%;
+  transition: transform 0.5s var(--spring), opacity 0.25s ease 0.2s;
+  will-change: transform, opacity;
+}
+.lid::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 38px;
+  margin-left: -19px;
+  background: linear-gradient(90deg, var(--ribbon-dark), var(--ribbon), var(--ribbon-dark));
+}
+.bow {
+  position: absolute;
+  left: 50%;
+  top: -22px;
+  width: 0;
+  height: 0;
+}
+.bow i {
+  position: absolute;
+  top: -8px;
+  width: 40px;
+  height: 30px;
+  border: 9px solid var(--ribbon);
+  border-radius: 50%;
+}
+.bow i:nth-child(1) { left: -44px; transform: rotate(-24deg); }
+.bow i:nth-child(2) { left: 4px; transform: rotate(24deg); }
+.bow b {
+  position: absolute;
+  left: -11px;
+  top: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ribbon-dark);
+}
+.open .lid {
+  transform: translate3d(-6px, -92px, 0) rotate(-26deg);
+  opacity: 0;
+}
+.body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 62px;
+  bottom: 0;
+  border-radius: 0 0 18px 18px;
+  background: linear-gradient(180deg, var(--box), var(--box-dark));
+  overflow: hidden;
+  z-index: 2;
+}
+.body::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 38px;
+  margin-left: -19px;
+  background: linear-gradient(90deg, var(--ribbon-dark), var(--ribbon), var(--ribbon-dark));
+}
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 220px;
+  max-width: 100%;
+  min-height: 64px;
+  padding: 16px 44px;
+  border-radius: 999px;
+  background: var(--btn);
+  color: var(--btn-text);
+  font-family: inherit;
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  text-decoration: none;
+  box-shadow: 0 10px 24px -10px rgba(42, 27, 61, 0.55);
+  animation: rise 0.5s 0.15s var(--ease-out) both;
+}
+.cta:active { transform: scale(0.97); }
+.cta:focus-visible {
+  outline: 3px solid var(--ribbon);
+  outline-offset: 4px;
+}
+.disclosure {
+  margin: 22px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  animation: rise 0.5s 0.25s var(--ease-out) both;
+}
+canvas {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 15;
+}
+.portal {
+  position: fixed;
+  left: var(--px);
+  top: var(--py);
+  width: var(--pd);
+  height: var(--pd);
+  margin: calc(var(--pd) / -2) 0 0 calc(var(--pd) / -2);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: scale(0);
+  transition: transform 0.55s var(--ease-io);
+  will-change: transform;
+}
+.portal.one { background: linear-gradient(160deg, var(--box-light), var(--box)); z-index: 20; }
+.portal.two {
+  background: radial-gradient(closest-side, #3f2766, var(--plum) 75%);
+  z-index: 21;
+  transition-delay: 0.1s;
+}
+.warp .portal { transform: scale(1); }
+.transit {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  color: #fff1dc;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(0, 14px, 0);
+  transition: opacity 0.3s ease, transform 0.4s var(--ease-out);
+}
+.show .transit { opacity: 1; transform: none; }
+.exit .transit { opacity: 0; transform: scale(1.05); transition-duration: 0.2s; }
+.ring {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 16px;
+  animation: spin 0.9s linear infinite;
+  will-change: transform;
+}
+.ring circle { fill: none; stroke-width: 5; stroke-linecap: round; }
+.ring .track { stroke: rgba(255, 241, 220, 0.18); }
+.ring .bar { stroke: var(--ribbon); stroke-dasharray: 52 124; }
+.transit h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+.transit p {
+  margin: 0;
+  max-width: 28ch;
+  color: #cdbde0;
+  font-size: 1rem;
+}
+@keyframes rise {
+  from { opacity: 0; transform: translate3d(0, 22px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes bob {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50% { transform: translate3d(0, -10px, 0) rotate(1.5deg); }
+}
+@keyframes floor {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.8); opacity: 0.6; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.3) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(45deg); }
+}
+@keyframes nudge {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-4deg); }
+  70% { transform: rotate(4deg); }
+}
+@keyframes shake {
+  0% { transform: rotate(0deg) scale(1); }
+  15% { transform: rotate(-8deg) scale(1.05); }
+  30% { transform: rotate(8deg) scale(1.05); }
+  45% { transform: rotate(-6deg) scale(1.06); }
+  60% { transform: rotate(6deg) scale(1.06); }
+  80% { transform: rotate(-2deg) scale(1.03); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+@keyframes burst {
+  0% { opacity: 0; transform: scale(0.2) rotate(0deg); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.5) rotate(40deg); }
+}
+@keyframes tease {
+  0%, 56%, 100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  61% { transform: translate3d(0, -8px, 0) rotate(-7deg) scale(1.06); }
+  67% { transform: translate3d(0, -2px, 0) rotate(6deg) scale(1.05); }
+  73% { transform: translate3d(0, -5px, 0) rotate(-5deg) scale(1.04); }
+  79% { transform: translate3d(0, 0, 0) rotate(3deg) scale(1.02); }
+  86% { transform: translate3d(0, 0, 0) rotate(-1deg) scale(1); }
+}
+@keyframes lidpeek {
+  0%, 56%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  64% { transform: translate3d(0, -12px, 0) rotate(-5deg); }
+  76% { transform: translate3d(0, -5px, 0) rotate(-2deg); }
+  86% { transform: translate3d(0, 0, 0) rotate(0deg); }
+}
+@keyframes ripple {
+  0% { opacity: 0.55; transform: scale(0.7); }
+  100% { opacity: 0; transform: scale(1.9); }
+}
+@keyframes tapdot {
+  0%, 34% { opacity: 0; transform: translate3d(32px, 36px, 0) scale(1); }
+  44% { opacity: 1; transform: translate3d(6px, 8px, 0) scale(1); }
+  52% { opacity: 1; transform: translate3d(0, 0, 0) scale(0.78); }
+  58% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  68%, 100% { opacity: 0; transform: translate3d(0, 0, 0) scale(1.35); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1 class="fade">Daily Surprise</h1><br><br>
+
+  <div class="stage" id="stage">
+    <div class="glow"></div>
+    <div class="burst"></div>
+    <span class="spark s1"></span>
+    <span class="spark s2"></span>
+    <span class="spark s3"></span>
+    <span class="spark s4"></span>
+    <span class="ripple"></span>
+    <span class="ripple r2"></span>
+    <button class="gift" id="gift" type="button" aria-label="Open the gift">
+      <span class="lid"><span class="bow"><i></i><i></i><b></b></span></span>
+      <span class="body"></span>
+    </button>
+    <span class="tapdot"></span>
+    <span class="floor"></span>
+  </div>
+  
+  <!-- <p class="sub fade">Tap the gift to see what’s inside</p> -->
+
+  <a class="cta fade" id="go" href="https://google.com" rel="noopener sponsored">No Thanks</a>
+
+  <p class="disclosure fade">Your surprise is an offer from our advertising partners. It can be different for each person, phone and country. Free to look. Nothing is guaranteed.</p>
+</main>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="portal one" aria-hidden="true"></div>
+<div class="portal two" aria-hidden="true"></div>
+
+<div class="transit" role="status" aria-live="polite">
+  <svg class="ring" viewBox="0 0 64 64" aria-hidden="true">
+    <circle class="track" cx="32" cy="32" r="28"></circle>
+    <circle class="bar" cx="32" cy="32" r="28"></circle>
+  </svg>
+  <h2>Getting your surprise ready</h2>
+  <p>Just a moment, taking you there now.</p>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var body = document.body;
+  var gift = document.getElementById("gift");
+  var go = document.getElementById("go");
+  var canvas = document.getElementById("fx");
+  var ctx = canvas.getContext("2d", { alpha: true });
+  var url = go.href;
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var colors = ["#ffd23f", "#ff5d73", "#ffffff", "#7be0c3", "#8f6bff", "#ff9f5b"];
+  var dpr = 1;
+  var busy = false;
+  var timers = [];
+  var raf = 0;
+
+  function later(fn, ms) {
+    timers.push(setTimeout(fn, ms));
+  }
+
+  function warmUp() {
+    try {
+      var origin = new URL(url).origin;
+      var pre = document.createElement("link");
+      pre.rel = "preconnect";
+      pre.href = origin;
+      document.head.appendChild(pre);
+      var dns = document.createElement("link");
+      dns.rel = "dns-prefetch";
+      dns.href = origin;
+      document.head.appendChild(dns);
+    } catch (e) {}
+  }
+
+  function sizeCanvas() {
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    canvas.width = Math.round(window.innerWidth * dpr);
+    canvas.height = Math.round(window.innerHeight * dpr);
+  }
+
+  function clearCanvas() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function confetti(x, y) {
+    var parts = [];
+    var i;
+    for (i = 0; i < 90; i++) {
+      var a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.5;
+      var s = 5 + Math.random() * 11;
+      parts.push({
+        x: x,
+        y: y,
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s,
+        w: 6 + Math.random() * 7,
+        h: 4 + Math.random() * 5,
+        r: Math.random() * 6.28,
+        vr: (Math.random() - 0.5) * 0.4,
+        ci: (Math.random() * colors.length) | 0
+      });
+    }
+    parts.sort(function (p, q) { return p.ci - q.ci; });
+
+    var last = 0;
+    var elapsed = 0;
+    var total = 105;
+
+    function tick(t) {
+      var dt = last ? Math.min((t - last) / 16.667, 2.5) : 1;
+      last = t;
+      elapsed += dt;
+      clearCanvas();
+      if (elapsed >= total) return;
+      ctx.globalAlpha = Math.max(0, 1 - elapsed / total);
+      var drag = Math.pow(0.99, dt);
+      var prev = -1;
+      for (var k = 0; k < parts.length; k++) {
+        var p = parts[k];
+        p.vy += 0.3 * dt;
+        p.vx *= drag;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.r += p.vr * dt;
+        if (p.ci !== prev) {
+          ctx.fillStyle = colors[p.ci];
+          prev = p.ci;
+        }
+        var c = Math.cos(p.r) * dpr;
+        var s2 = Math.sin(p.r) * dpr;
+        ctx.setTransform(c, s2, -s2, c, p.x * dpr, p.y * dpr);
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      }
+      raf = requestAnimationFrame(tick);
+    }
+
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(tick);
+  }
+
+  var audio = null;
+
+  function getAudio() {
+    if (audio) return audio;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    try {
+      var c = new AC();
+      var master = c.createGain();
+      master.gain.value = 0.8;
+      var comp = c.createDynamicsCompressor();
+      master.connect(comp);
+      comp.connect(c.destination);
+      var buf = c.createBuffer(1, c.sampleRate, c.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      audio = { ctx: c, out: master, noise: buf };
+    } catch (e) {
+      audio = null;
+    }
+    return audio;
+  }
+
+  function tone(a, type, freq, t, dur, vol, endFreq) {
+    var o = a.ctx.createOscillator();
+    var g = a.ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (endFreq) o.frequency.exponentialRampToValueAtTime(endFreq, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g);
+    g.connect(a.out);
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  }
+
+  function swoosh(a, t, dur, vol, f0, f1) {
+    var s = a.ctx.createBufferSource();
+    s.buffer = a.noise;
+    var f = a.ctx.createBiquadFilter();
+    f.type = "bandpass";
+    f.Q.value = 1.2;
+    f.frequency.setValueAtTime(f0, t);
+    f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    var g = a.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.4);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f);
+    f.connect(g);
+    g.connect(a.out);
+    s.start(t);
+    s.stop(t + dur + 0.05);
+  }
+
+  function playSequence() {
+    var a = getAudio();
+    if (!a) return;
+    if (a.ctx.state === "suspended") a.ctx.resume();
+    var t = a.ctx.currentTime + 0.02;
+    var i;
+    for (i = 0; i < 6; i++) {
+      tone(a, "triangle", 620 + Math.random() * 500, t + i * 0.045, 0.04, 0.05);
+    }
+    tone(a, "sine", 260, t + 0.28, 0.14, 0.3, 720);
+    swoosh(a, t + 0.28, 0.12, 0.12, 2000, 5200);
+    [1046.5, 1318.5, 1568, 2093].forEach(function (f, n) {
+      tone(a, "triangle", f, t + 0.32 + n * 0.065, 0.55, 0.07);
+    });
+    swoosh(a, t + 0.6, 0.55, 0.2, 400, 2600);
+    tone(a, "sine", 784, t + 1.05, 0.6, 0.06);
+    tone(a, "sine", 1046.5, t + 1.17, 0.8, 0.06);
+  }
+
+  function reset() {
+    timers.forEach(clearTimeout);
+    timers = [];
+    cancelAnimationFrame(raf);
+    clearCanvas();
+    body.classList.remove("busy", "open", "warp", "show", "exit");
+    gift.classList.remove("shake");
+    gift.disabled = false;
+    busy = false;
+  }
+
+  function start() {
+    if (busy) return;
+    busy = true;
+    gift.disabled = true;
+
+    var r = gift.getBoundingClientRect();
+    var cx = r.left + r.width / 2;
+    var cy = r.top + r.height * 0.55;
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    var reach = Math.max(
+      Math.hypot(cx, cy),
+      Math.hypot(w - cx, cy),
+      Math.hypot(cx, h - cy),
+      Math.hypot(w - cx, h - cy)
+    );
+    root.style.setProperty("--px", cx + "px");
+    root.style.setProperty("--py", cy + "px");
+    root.style.setProperty("--pd", Math.ceil(reach * 2 + 8) + "px");
+
+    if (reduced) {
+      body.classList.add("busy", "warp", "show");
+      later(function () { window.location.assign(url); }, 500);
+      return;
+    }
+
+    playSequence();
+    body.classList.add("busy");
+    gift.classList.add("shake");
+
+    later(function () {
+      body.classList.add("open");
+      confetti(cx, cy - 30);
+    }, 280);
+
+    later(function () {
+      body.classList.add("warp");
+    }, 600);
+
+    later(function () {
+      body.classList.add("show");
+    }, 1050);
+
+    later(function () {
+      body.classList.add("exit");
+    }, 1800);
+
+    later(function () {
+      window.location.assign(url);
+    }, 2050);
+  }
+
+  gift.addEventListener("pointerdown", getAudio);
+  go.addEventListener("pointerdown", getAudio);
+  gift.addEventListener("click", start);
+  go.addEventListener("click", function (e) {
+    e.preventDefault();
+    start();
+  });
+  window.addEventListener("resize", function () {
+    if (!busy) sizeCanvas();
+  });
+  window.addEventListener("pageshow", function (e) {
+    if (e.persisted) reset();
+  });
+
+  sizeCanvas();
+  warmUp();
+})();
+</script>
+</body>
+</html>
