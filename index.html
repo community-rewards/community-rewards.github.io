@@ -38,8 +38,10 @@
   }
 }
 *, *::before, *::after { box-sizing: inherit; }
-html, body { height: 100%; }
+html { min-height: 100%; }
 body {
+  min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   background:
     radial-gradient(120% 70% at 50% 0%, var(--glow), transparent 60%),
@@ -49,10 +51,11 @@ body {
   font-size: 18px;
   line-height: 1.5;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: calc(24px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px));
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
@@ -62,12 +65,21 @@ main {
   max-width: 440px;
   text-align: center;
   z-index: 5;
+  margin: auto 0; /* content short ho toh center, lamba ho toh upar se shuru + scroll */
 }
+[id^="container-"] {
+  width: 100%;
+  max-width: 100%;
+  margin: 8px auto 0;
+  overflow: hidden;
+  text-align: left;
+}
+[id^="container-"] * { max-width: 100%; }
 h1 {
   font-size: clamp(2rem, 9vw, 2.9rem);
   font-weight: 900;
   line-height: 1.05;
-  margin: 0 0 12px;
+  margin: 0 0 56px;
   letter-spacing: -0.02em;
   animation: rise 0.5s var(--ease-out) both;
 }
@@ -463,7 +475,7 @@ canvas {
 </head>
 <body>
 <main>
-  <h1 class="fade">Daily Surprise</h1><br><br>
+  <h1 class="fade">Daily Surprise</h1>
 
   <div class="stage" id="stage">
     <div class="glow"></div>
