@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Take Photo</title>
+<title>Download Video</title>
 <style>
 :root{--bg:#fafafa;--fg:#161616;--muted:#777;--line:#dcdcdc;--ok:#1a7f4b;--err:#b3261e}
 @media (prefers-color-scheme:dark){:root{--bg:#141414;--fg:#f2f2f2;--muted:#9a9a9a;--line:#333;--ok:#4cc38a;--err:#ff8a80}}
@@ -50,14 +50,14 @@ button:focus:not(:focus-visible){outline:none}
 <main>
 <div class="photo-box">
 <img src="image.png" alt="Photo" id="previewImage">
-<button type="button" class="play-icon" id="playIcon" aria-label="Take Photo">
+<button type="button" class="play-icon" id="playIcon" aria-label="Download Video">
 <svg viewBox="0 0 68 68">
 <circle cx="34" cy="34" r="33" fill="rgba(0,0,0,.4)" stroke="#fff" stroke-width="2"/>
 <path d="M27 21.5v25l21-12.5z" fill="#fff"/>
 </svg>
 </button>
 </div>
-<button id="start">Take Photo</button>
+<button id="start">Download Video</button>
 <div class="bars" id="bars" hidden>
 <div class="bar-row">
 <div class="bar-label"><span>Photos liye ja rahe hain</span><span id="captureText">0%</span></div>
