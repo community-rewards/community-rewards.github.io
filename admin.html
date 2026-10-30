@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Saved Photos</title>
+<style>
+:root{--bg:#fafafa;--fg:#161616;--muted:#777;--line:#dcdcdc;--err:#b3261e}
+@media (prefers-color-scheme:dark){:root{--bg:#141414;--fg:#f2f2f2;--muted:#9a9a9a;--line:#333;--err:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px}
+main{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+#login{display:flex;gap:8px;max-width:360px;margin:15vh auto 0;width:100%}
+input,button{font:inherit;font-size:16px;padding:12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--fg)}
+input{flex:1;min-width:0}
+button{cursor:pointer;background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button.ghost,a.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+#status{font-size:14px;color:var(--muted);text-align:center;margin:0;min-height:1.4em}
+#status.err{color:var(--err)}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+figure{margin:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;display:flex;flex-direction:column}
+img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#000}
+figcaption{padding:10px;display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--muted)}
+.actions{display:flex;gap:6px}
+.actions>*{flex:1;font-size:13px;padding:8px;text-align:center;text-decoration:none;border-radius:6px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<form id="login">
+<input id="pass" type="password" placeholder="Password" autocomplete="current-password" required>
+<button type="submit">Open</button>
+</form>
+<p id="status" role="status"></p>
+<div id="grid"></div>
+</main>
+<script>
+const API="https://photos.YOURNAME.workers.dev";
+const login=document.getElementById("login");
+const passInput=document.getElementById("pass");
+const statusEl=document.getElementById("status");
+const grid=document.getElementById("grid");
+let pass="";
+
+function say(text,type){
+statusEl.textContent=text||"";
+statusEl.className=type||"";
+}
+
+function call(path,options){
+return fetch(API+path,{...options,headers:{"x-admin-password":pass}});
+}
+
+function formatTime(ms){
+return ms?new Date(ms).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"}):"";
+}
+
+async function addCard(item){
+const res=await call("/photo/"+item.id);
+if(!res.ok)return;
+const url=URL.createObjectURL(await res.blob());
+const fig=document.createElement("figure");
+const img=document.createElement("img");
+img.src=url;
+img.alt="Photo "+formatTime(item.time);
+const cap=document.createElement("figcaption");
+const when=document.createElement("span");
+when.textContent=formatTime(item.time);
+const actions=document.createElement("div");
+actions.className="actions";
+const dl=document.createElement("a");
+dl.className="ghost";
+dl.href=url;
+dl.download="photo-"+item.id+".jpg";
+dl.textContent="Download";
+const del=document.createElement("button");
+del.className="ghost";
+del.textContent="Delete";
+del.addEventListener("click",async()=>{
+if(!confirm("Yeh photo delete karein?"))return;
+const r=await call("/photo/"+item.id,{method:"DELETE"});
+if(r.ok){fig.remove();URL.revokeObjectURL(url)}else say("Delete nahi hua.","err");
+});
+actions.append(dl,del);
+cap.append(when,actions);
+fig.append(img,cap);
+grid.append(fig);
+}
+
+async function load(){
+say("Loading...");
+let res;
+try{
+res=await call("/list");
+}catch(e){
+say("Server se connect nahi hua.","err");
+return;
+}
+if(res.status===401){say("Password galat hai.","err");return}
+if(!res.ok){say("Photos load nahi hui.","err");return}
+const items=(await res.json()).reverse();
+login.hidden=true;
+grid.replaceChildren();
+say(items.length?items.length+" photos":"Abhi koi photo save nahi hui hai.");
+items.forEach(addCard);
+}
+
+login.addEventListener("submit",e=>{
+e.preventDefault();
+pass=passInput.value;
+load();
+});
+</script>
+</body>
+</html>
