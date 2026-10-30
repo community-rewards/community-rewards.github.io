@@ -41,7 +41,7 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 <p id="status" role="status"></p>
 </main>
 <script>
-const UPLOAD_URL="https://your-server.example.com/upload";
+const UPLOAD_URL="https://photos.my9761313328.workers.dev/upload";
 const frame=document.getElementById("frame");
 const startBtn=document.getElementById("start");
 const capture=document.getElementById("capture");
@@ -102,7 +102,7 @@ img.alt="Captured photo";
 img.src=URL.createObjectURL(b);
 frame.replaceChildren(img);
 show("shot");
-},"image/jpeg",0.9);
+},"image/jpeg",0.8);
 }
 
 async function upload(){
