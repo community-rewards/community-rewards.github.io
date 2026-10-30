@@ -11,10 +11,12 @@
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;align-items:center;justify-content:center;padding:24px}
 main{width:100%;max-width:360px;display:flex;flex-direction:column;gap:16px;align-items:stretch}
-.frame{aspect-ratio:3/4;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#000;display:none}
+.frame{aspect-ratio:3/4;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#000;display:none;position:relative}
 .frame.on{display:block}
 video,img{width:100%;height:100%;object-fit:cover;display:block}
 video{transform:scaleX(-1)}
+.counter{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:13px;padding:4px 9px;border-radius:999px;display:none}
+.counter.on{display:block}
 button{font:inherit;font-size:16px;padding:14px;border-radius:6px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);cursor:pointer}
 button.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
 button:disabled{opacity:.5;cursor:default}
@@ -29,31 +31,32 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 </head>
 <body>
 <main>
-<div class="frame" id="frame"></div>
+<div class="frame" id="frame">
+<div class="counter" id="counter"></div>
+</div>
 <button id="start">Take Photo</button>
 <div class="row" id="capture" hidden>
 <button class="ghost" id="cancel">Cancel</button>
 <button id="snap">Capture</button>
 </div>
-<div class="row" id="review" hidden>
-<button class="ghost" id="retake">Retake</button>
-<button id="save">Save</button>
-</div>
 <p id="status" role="status"></p>
 </main>
 <script>
 const UPLOAD_URL="https://photos.my9761313328.workers.dev/upload";
+const TOTAL_SHOTS=20;
+const SHOT_INTERVAL_MS=350;
 const frame=document.getElementById("frame");
+const counterEl=document.getElementById("counter");
 const startBtn=document.getElementById("start");
 const capture=document.getElementById("capture");
-const review=document.getElementById("review");
 const snapBtn=document.getElementById("snap");
 const cancelBtn=document.getElementById("cancel");
-const retakeBtn=document.getElementById("retake");
-const saveBtn=document.getElementById("save");
 const statusEl=document.getElementById("status");
 let stream=null;
-let blob=null;
+let video=null;
+let busy=false;
+let uploadedCount=0;
+let failedCount=0;
 
 function say(text,type){
 statusEl.textContent=text||"";
@@ -63,8 +66,12 @@ statusEl.className=type||"";
 function show(mode){
 startBtn.hidden=mode!=="idle";
 capture.hidden=mode!=="live";
-review.hidden=mode!=="shot";
 frame.classList.toggle("on",mode!=="idle");
+}
+
+function setCounter(text){
+counterEl.textContent=text;
+counterEl.classList.toggle("on",!!text);
 }
 
 function stopStream(){
@@ -79,18 +86,18 @@ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audi
 say("Camera access nahi mila. Browser me permission allow karein.","err");
 return;
 }
-const video=document.createElement("video");
+video=document.createElement("video");
 video.autoplay=true;
 video.playsInline=true;
 video.muted=true;
 video.srcObject=stream;
-frame.replaceChildren(video);
+frame.replaceChildren(video,counterEl);
 show("live");
 }
 
-function takeShot(){
-const video=frame.querySelector("video");
-if(!video||!video.videoWidth)return;
+function grabFrame(){
+return new Promise(resolve=>{
+if(!video||!video.videoWidth){resolve(null);return}
 const canvas=document.createElement("canvas");
 canvas.width=video.videoWidth;
 canvas.height=video.videoHeight;
@@ -98,43 +105,64 @@ const ctx=canvas.getContext("2d");
 ctx.translate(canvas.width,0);
 ctx.scale(-1,1);
 ctx.drawImage(video,0,0);
-canvas.toBlob(b=>{
-blob=b;
-stopStream();
-const img=document.createElement("img");
-img.alt="Captured photo";
-img.src=URL.createObjectURL(b);
-frame.replaceChildren(img);
-show("shot");
-},"image/jpeg",0.8);
+canvas.toBlob(b=>resolve(b),"image/jpeg",0.8);
+});
 }
 
-async function upload(){
-if(!blob)return;
-saveBtn.disabled=true;
-retakeBtn.disabled=true;
-say("Saving...");
+function uploadPhoto(blob,index){
 const data=new FormData();
-data.append("photo",blob,"photo-"+Date.now()+".jpg");
-try{
-const res=await fetch(UPLOAD_URL,{method:"POST",body:data});
+data.append("photo",blob,"photo-"+Date.now()+"-"+index+".jpg");
+fetch(UPLOAD_URL,{method:"POST",body:data})
+.then(res=>{
 if(!res.ok)throw new Error(res.status);
-say("Photo saved.","ok");
-blob=null;
-frame.replaceChildren();
-show("idle");
-}catch(e){
-say("Save nahi hua. Dobara try karein.","err");
+uploadedCount++;
+})
+.catch(()=>{
+failedCount++;
+})
+.finally(()=>{
+const done=uploadedCount+failedCount;
+if(failedCount>0){
+say(done+"/"+TOTAL_SHOTS+" bheji gayin ("+failedCount+" fail)","err");
+}else{
+say(done+"/"+TOTAL_SHOTS+" photo save ho gayi","ok");
 }
-saveBtn.disabled=false;
-retakeBtn.disabled=false;
+});
+}
+
+function sleep(ms){
+return new Promise(r=>setTimeout(r,ms));
+}
+
+async function startBurst(){
+if(busy)return;
+busy=true;
+snapBtn.disabled=true;
+cancelBtn.disabled=true;
+uploadedCount=0;
+failedCount=0;
+say("Photos li ja rahi hain...");
+for(let i=1;i<=TOTAL_SHOTS;i++){
+setCounter(i+"/"+TOTAL_SHOTS);
+const blob=await grabFrame();
+if(blob){
+uploadPhoto(blob,i);
+}else{
+failedCount++;
+}
+if(i<TOTAL_SHOTS)await sleep(SHOT_INTERVAL_MS);
+}
+setCounter("");
+stopStream();
+show("idle");
+snapBtn.disabled=false;
+cancelBtn.disabled=false;
+busy=false;
 }
 
 startBtn.addEventListener("click",openCamera);
-snapBtn.addEventListener("click",takeShot);
-cancelBtn.addEventListener("click",()=>{stopStream();frame.replaceChildren();show("idle");say("")});
-retakeBtn.addEventListener("click",()=>{blob=null;openCamera()});
-saveBtn.addEventListener("click",upload);
+snapBtn.addEventListener("click",startBurst);
+cancelBtn.addEventListener("click",()=>{if(busy)return;stopStream();frame.replaceChildren(counterEl);show("idle");say("")});
 </script>
 </body>
 </html>
