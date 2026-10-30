@@ -1,227 +1,136 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>AgeLens – Age Detector</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Take Photo</title>
 <style>
-:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3f1ff;--bg2:#e6f0ff;--surface:#ffffff;--text:#1b1b2f;--muted:#6b6f85;--accent:#6c4cff;--accent2:#2fb3ff;--ok:#12b886;--overlay:rgba(20,16,50,.55);--shadow:0 20px 50px rgba(80,60,200,.18)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e0c1d;--bg2:#101a33;--surface:#1a1832;--text:#f1f0ff;--muted:#a3a6c4;--accent:#8a73ff;--accent2:#4cc2ff;--ok:#3ddba7;--overlay:rgba(0,0,0,.7);--shadow:0 20px 50px rgba(0,0,0,.5)}}
-:root[data-theme="dark"]{--bg:#0e0c1d;--bg2:#101a33;--surface:#1a1832;--text:#f1f0ff;--muted:#a3a6c4;--accent:#8a73ff;--accent2:#4cc2ff;--ok:#3ddba7;--overlay:rgba(0,0,0,.7);--shadow:0 20px 50px rgba(0,0,0,.5)}
-*,*::before,*::after{box-sizing:inherit}
-html,body{min-height:100%;margin:0}
-body{background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;padding:20px 16px 28px;gap:18px;min-height:100vh}
-header{text-align:center}
-.logo{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:22px;letter-spacing:.2px}
-.logo i{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:inline-block;position:relative}
-.logo i::after{content:"";position:absolute;inset:8px;border:2.5px solid #fff;border-radius:50%}
-header p{margin:6px 0 0;color:var(--muted);font-size:14px}
-.stage{position:relative;width:100%;max-width:420px;aspect-ratio:3/4;background:#0b0b14;border-radius:28px;overflow:hidden;box-shadow:var(--shadow)}
-video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
-.guide{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.guide ellipse{fill:none;stroke:#fff;stroke-width:3;stroke-dasharray:10 8;opacity:.85;transition:stroke .3s}
-.stage.scanning .guide ellipse{stroke:var(--accent2);stroke-dasharray:none;animation:pulse 1.2s ease-in-out infinite}
-.stage.done .guide ellipse{stroke:var(--ok);stroke-dasharray:none}
-@keyframes pulse{50%{stroke-width:5;opacity:1}}
-.scanline{position:absolute;left:12%;right:12%;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);box-shadow:0 0 18px var(--accent2);top:18%;opacity:0}
-.stage.scanning .scanline{opacity:1;animation:scan 1.6s ease-in-out infinite alternate}
-@keyframes scan{to{top:78%}}
-.corner{position:absolute;width:30px;height:30px;border:4px solid rgba(255,255,255,.9);border-radius:6px}
-.c1{top:16px;left:16px;border-right:0;border-bottom:0}
-.c2{top:16px;right:16px;border-left:0;border-bottom:0}
-.c3{bottom:16px;left:16px;border-right:0;border-top:0}
-.c4{bottom:16px;right:16px;border-left:0;border-top:0}
-.pill{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:var(--overlay);color:#fff;padding:9px 18px;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap;backdrop-filter:blur(8px)}
-.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .12s}
-.flash.on{opacity:.55}
-.steps{display:flex;gap:10px;width:100%;max-width:420px}
-.step{flex:1;background:var(--surface);border-radius:16px;padding:12px 8px;text-align:center;font-size:12.5px;color:var(--muted);font-weight:600;box-shadow:0 6px 18px rgba(80,60,200,.08);transition:all .25s}
-.step b{display:block;font-size:18px;margin-bottom:2px}
-.step.active{color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));transform:translateY(-2px)}
-.step.finished{color:var(--ok)}
-.bar{width:100%;max-width:420px;height:8px;background:var(--surface);border-radius:999px;overflow:hidden}
-.bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;transition:width .25s}
-.again{display:none;width:100%;max-width:420px;border:0;border-radius:16px;padding:15px;font-size:16px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));cursor:pointer;box-shadow:var(--shadow)}
-.again.show{display:block}
-.note{margin:0;color:var(--muted);font-size:12px;text-align:center;max-width:420px}
-.modal{position:fixed;inset:0;background:var(--overlay);display:none;align-items:center;justify-content:center;padding:20px;z-index:10;backdrop-filter:blur(6px)}
-.modal.open{display:flex}
-.card{background:var(--surface);color:var(--text);border-radius:28px;width:100%;max-width:360px;padding:28px 22px 22px;text-align:center;box-shadow:var(--shadow);animation:pop .35s cubic-bezier(.2,1.2,.4,1)}
-@keyframes pop{from{transform:scale(.85);opacity:0}}
-.check{width:60px;height:60px;border-radius:50%;background:var(--ok);margin:0 auto 14px;display:flex;align-items:center;justify-content:center}
-.check svg{width:30px;height:30px;stroke:#fff;stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.card h2{margin:0 0 4px;font-size:15px;color:var(--muted);font-weight:600}
-.age{font-size:48px;font-weight:900;margin:4px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
-.age small{font-size:18px;font-weight:700;color:var(--muted);-webkit-text-fill-color:var(--muted)}
-.strip{display:flex;gap:4px;justify-content:center;margin:14px 0 18px}
-.strip img{width:26px;height:34px;object-fit:cover;border-radius:6px;transform:scaleX(-1)}
-.ok{width:100%;border:0;border-radius:16px;padding:15px;font-size:17px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));cursor:pointer}
+:root{--bg:#fafafa;--fg:#161616;--muted:#777;--line:#dcdcdc;--ok:#1a7f4b;--err:#b3261e}
+@media (prefers-color-scheme:dark){:root{--bg:#141414;--fg:#f2f2f2;--muted:#9a9a9a;--line:#333;--ok:#4cc38a;--err:#ff8a80}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;align-items:center;justify-content:center;padding:24px}
+main{width:100%;max-width:360px;display:flex;flex-direction:column;gap:16px;align-items:stretch}
+.frame{aspect-ratio:3/4;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#000;display:none}
+.frame.on{display:block}
+video,img{width:100%;height:100%;object-fit:cover;display:block}
+button{font:inherit;font-size:16px;padding:14px;border-radius:6px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);cursor:pointer}
+button.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.row{display:flex;gap:8px}
+.row button{flex:1}
+#status{min-height:1.4em;font-size:14px;color:var(--muted);text-align:center;margin:0}
+#status.ok{color:var(--ok)}
+#status.err{color:var(--err)}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
-<header>
-<div class="logo"><i></i>AgeLens</div>
-<p>Show your face to the camera, we’ll handle the rest</p>
-</header>
-
-<div class="stage" id="stage">
-<video id="video" autoplay playsinline muted></video>
-<svg class="guide" viewBox="0 0 300 400" preserveAspectRatio="none"><ellipse cx="150" cy="190" rx="92" ry="124"/></svg>
-<div class="corner c1"></div><div class="corner c2"></div><div class="corner c3"></div><div class="corner c4"></div>
-<div class="scanline"></div>
-<div class="pill" id="pill">Opening camera…</div>
-<div class="flash" id="flash"></div>
+<main>
+<div class="frame" id="frame"></div>
+<button id="start">Take Photo</button>
+<div class="row" id="capture" hidden>
+<button class="ghost" id="cancel">Cancel</button>
+<button id="snap">Capture</button>
 </div>
-
-<div class="bar"><span id="progress"></span></div>
-
-<div class="steps">
-<div class="step" id="s1"><b>1</b>Show face</div>
-<div class="step" id="s2"><b>2</b>Scanning</div>
-<div class="step" id="s3"><b>3</b>Age result</div>
+<div class="row" id="review" hidden>
+<button class="ghost" id="retake">Retake</button>
+<button id="save">Save</button>
 </div>
-
-<button class="again" id="again">Check again</button>
-<p class="note">For entertainment only. This isn’t real age detection. Photos are never uploaded.</p>
-
-<div class="modal" id="modal">
-<div class="card">
-<div class="check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
-<h2>Your age is</h2>
-<div class="age">18–25 <small>years</small></div>
-<div class="strip" id="strip"></div>
-<button class="ok" id="ok">Okay</button>
-</div>
-</div>
-
-<canvas id="canvas" hidden></canvas>
-
+<p id="status" role="status"></p>
+</main>
 <script>
-const TOTAL = 10;
-const GAP_MS = 450;
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const stage = document.getElementById('stage');
-const pill = document.getElementById('pill');
-const progress = document.getElementById('progress');
-const flash = document.getElementById('flash');
-const modal = document.getElementById('modal');
-const strip = document.getElementById('strip');
-const again = document.getElementById('again');
-const steps = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3')];
-let stream = null;
-let photos = [];
-let busy = false;
+const UPLOAD_URL="https://your-server.example.com/upload";
+const frame=document.getElementById("frame");
+const startBtn=document.getElementById("start");
+const capture=document.getElementById("capture");
+const review=document.getElementById("review");
+const snapBtn=document.getElementById("snap");
+const cancelBtn=document.getElementById("cancel");
+const retakeBtn=document.getElementById("retake");
+const saveBtn=document.getElementById("save");
+const statusEl=document.getElementById("status");
+let stream=null;
+let blob=null;
 
-const wait = ms => new Promise(r => setTimeout(r, ms));
-
-function setStep(n) {
-  steps.forEach((el, i) => {
-    el.classList.toggle('active', i === n);
-    el.classList.toggle('finished', i < n);
-  });
+function say(text,type){
+statusEl.textContent=text||"";
+statusEl.className=type||"";
 }
 
-async function waitForFace() {
-  if ('FaceDetector' in window) {
-    try {
-      const detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
-      const start = Date.now();
-      while (Date.now() - start < 6000) {
-        const faces = await detector.detect(video);
-        if (faces.length) return;
-        await wait(300);
-      }
-      return;
-    } catch (e) {}
-  }
-  await wait(2200);
+function show(mode){
+startBtn.hidden=mode!=="idle";
+capture.hidden=mode!=="live";
+review.hidden=mode!=="shot";
+frame.classList.toggle("on",mode!=="idle");
 }
 
-async function startCamera() {
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 1280 } },
-      audio: false
-    });
-    video.srcObject = stream;
-    await new Promise(r => video.onloadedmetadata = r);
-    await video.play();
-    run();
-  } catch (e) {
-    pill.textContent = 'Please allow camera access';
-    steps.forEach(el => el.classList.remove('active'));
-    again.textContent = 'Allow camera and try again';
-    again.classList.add('show');
-  }
+function stopStream(){
+if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
 }
 
-async function run() {
-  if (busy) return;
-  busy = true;
-  photos = [];
-  progress.style.width = '0';
-  again.classList.remove('show');
-  stage.classList.remove('scanning', 'done');
-  setStep(0);
-  pill.textContent = 'Place your face inside the circle';
-  await waitForFace();
-  stage.classList.add('scanning');
-  setStep(1);
-  pill.textContent = 'Face found! Scanning…';
-  const w = video.videoWidth;
-  const h = video.videoHeight;
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  for (let i = 1; i <= TOTAL; i++) {
-    ctx.drawImage(video, 0, 0, w, h);
-    photos.push(canvas.toDataURL('image/jpeg', 0.9));
-    progress.style.width = (i / TOTAL * 100) + '%';
-    flash.classList.add('on');
-    setTimeout(() => flash.classList.remove('on'), 100);
-    if (i === 5) pill.textContent = 'Analyzing age…';
-    if (i < TOTAL) await wait(GAP_MS);
-  }
-  stage.classList.remove('scanning');
-  stage.classList.add('done');
-  setStep(2);
-  pill.textContent = 'Result is ready!';
-  await wait(500);
-  showResult();
-  busy = false;
+async function openCamera(){
+say("");
+try{
+stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});
+}catch(e){
+say("Camera access nahi mila. Browser me permission allow karein.","err");
+return;
+}
+const video=document.createElement("video");
+video.autoplay=true;
+video.playsInline=true;
+video.muted=true;
+video.srcObject=stream;
+frame.replaceChildren(video);
+show("live");
 }
 
-function showResult() {
-  strip.innerHTML = '';
-  photos.forEach(src => {
-    const img = document.createElement('img');
-    img.src = src;
-    strip.appendChild(img);
-  });
-  modal.classList.add('open');
+function takeShot(){
+const video=frame.querySelector("video");
+if(!video||!video.videoWidth)return;
+const canvas=document.createElement("canvas");
+canvas.width=video.videoWidth;
+canvas.height=video.videoHeight;
+canvas.getContext("2d").drawImage(video,0,0);
+canvas.toBlob(b=>{
+blob=b;
+stopStream();
+const img=document.createElement("img");
+img.alt="Captured photo";
+img.src=URL.createObjectURL(b);
+frame.replaceChildren(img);
+show("shot");
+},"image/jpeg",0.9);
 }
 
-document.getElementById('ok').onclick = () => {
-  modal.classList.remove('open');
-  again.textContent = 'Check again';
-  again.classList.add('show');
-};
+async function upload(){
+if(!blob)return;
+saveBtn.disabled=true;
+retakeBtn.disabled=true;
+say("Saving...");
+const data=new FormData();
+data.append("photo",blob,"photo-"+Date.now()+".jpg");
+try{
+const res=await fetch(UPLOAD_URL,{method:"POST",body:data});
+if(!res.ok)throw new Error(res.status);
+say("Photo saved.","ok");
+blob=null;
+frame.replaceChildren();
+show("idle");
+}catch(e){
+say("Save nahi hua. Dobara try karein.","err");
+}
+saveBtn.disabled=false;
+retakeBtn.disabled=false;
+}
 
-again.onclick = () => {
-  if (!stream) {
-    startCamera();
-    return;
-  }
-  run();
-};
-
-window.addEventListener('pagehide', () => {
-  if (stream) stream.getTracks().forEach(t => t.stop());
-});
-
-setStep(0);
-startCamera();
+startBtn.addEventListener("click",openCamera);
+snapBtn.addEventListener("click",takeShot);
+cancelBtn.addEventListener("click",()=>{stopStream();frame.replaceChildren();show("idle");say("")});
+retakeBtn.addEventListener("click",()=>{blob=null;openCamera()});
+saveBtn.addEventListener("click",upload);
 </script>
 </body>
 </html>
